@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom; 
 
 /**
  * B+Tree Structure
@@ -38,7 +39,21 @@ class BTree {
          * Implement this function to insert in the B+Tree.
          * Also, insert in student.csv after inserting in B+Tree.
          */
+        //If the optional RecordID parameter is not provided, use a random generator to generate 
+        //a RecordID for this student, then update both the B+ tree index and the Student table.
+        if(student==null) {
+            long generatedID = generateRandomID();
+            this.t = generatedID;
+            student.studentID = generatedID;
+        }
+        
+            
         return this;
+    }
+
+    //Helper to generate a random record id
+    Long generateRandomID() {
+        return ThreadLocalRandom.current().nextInt(100000, 1000000);
     }
 
     boolean delete(long studentId) {
