@@ -52,7 +52,14 @@ public class BTreeMain {
                             /** TODO: Write a logic to generate recordID if it is not provided
                              *        If it is provided, use the provided value
                             */
-                            long recordID = ;
+                            long recordID;
+                            if (s2.hasNext()) {
+                            	recordID = Long.parseLong(s2.next());
+                            }
+                            else
+                            {
+                            	recordID = ThreadLocalRandom.current().nextLong(100, 10000);
+                            }
 
                             Student s = new Student(studentId, age, studentName, major, level, recordID);
                             bTree.insert(s);
@@ -101,7 +108,35 @@ public class BTreeMain {
          * return the list<Students>
          */
 
-        List<Student> studentList = new ArrayList<>();
-        return studentList;
+    	List<Student> studentList = new ArrayList<>();
+    	try {
+        
+        Scanner scan = null;
+        String[] line;
+        long studentId=0;
+        int age=0;
+        String studentName;
+        String major;
+        String level;
+        long recordId=-1;
+        scan = new Scanner(new File("src/Student.csv"));
+
+        while (scan.hasNextLine()) {
+        	line = scan.nextLine().split(",");
+        	if (line.length==5) {
+        		studentId=Long.parseLong(line[0]);
+        		studentName = line[1];
+        		major = line[2];
+        		level = line[3];
+        		age=Integer.parseInt(line[4]);
+        		recordId=Long.parseLong(line[5]);
+        		studentList.add(new Student(studentId, age, studentName, major, level, recordId));
+        	}
+        }
+        scan.close();
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	return studentList;
     }
 }
