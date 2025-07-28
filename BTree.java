@@ -296,35 +296,35 @@ class BTree {
         return null;
     }
 
-    BTreeNode merge(BTreeNode nodeToMerge)
+    private BTreeNode merge(BTreeNode nodeToMerge)
     {
-                            long[] mergedKeys = new long[nodeToMerge.n + nodeToMerge.next.n];
-                            long[] mergedValues = new long[nodeToMerge.n + nodeToMerge.next.n];
+        long[] mergedKeys = new long[nodeToMerge.n + nodeToMerge.next.n];
+        long[] mergedValues = new long[nodeToMerge.n + nodeToMerge.next.n];
                             
-                            //Add this node's elements
-                            for(int i = 0; i < nodeToMerge.n; i++)
-                            {
-                                mergedKeys[i] = nodeToMerge.keys[i];
-                                mergedValues[i] = nodeToMerge.keys[i];
-                            }
+        //Add this node's elements
+        for(int i = 0; i < nodeToMerge.n; i++)
+        {
+            mergedKeys[i] = nodeToMerge.keys[i];
+            mergedValues[i] = nodeToMerge.keys[i];
+        }
                             
-                            //Add the next node's elements
-                            for(int i = 0; i < nodeToMerge.next.n; i++)
-                            {
-                                //Keep going where you left off
-                                mergedKeys[nodeToMerge.n - 1 + i] = nodeToMerge.next.keys[i];
-                                mergedValues[nodeToMerge.n - 1 + i] = nodeToMerge.next.keys[i];
-                            }
+        //Add the next node's elements
+        for(int i = 0; i < nodeToMerge.next.n; i++)
+        {
+            //Keep going where you left off
+            mergedKeys[nodeToMerge.n - 1 + i] = nodeToMerge.next.keys[i];
+            mergedValues[nodeToMerge.n - 1 + i] = nodeToMerge.next.keys[i];
+        }
 
-                            //Update the node
-                            nodeToMerge.keys = mergedKeys;
-                            nodeToMerge.values = mergedValues;
-                            nodeToMerge.n += nodeToMerge.next.n;
+        //Update the node
+        nodeToMerge.keys = mergedKeys;
+        nodeToMerge.values = mergedValues;
+        nodeToMerge.n += nodeToMerge.next.n;
                             
-                            //can't forget to update the pointers
-                            nodeToMerge.next = nodeToMerge.next.next; 
-                            nodeToMerge.next.previous = nodeToMerge;
-                            return nodeToMerge;
+        //Can't forget to update the pointers
+        nodeToMerge.next = nodeToMerge.next.next; 
+        nodeToMerge.next.previous = nodeToMerge;
+        return nodeToMerge;
     }
     List<Long> print() {
 
