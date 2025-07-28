@@ -51,14 +51,12 @@ class BTree {
 			int i;
 			// okay so a little weird to use the for loop like this, but we just need to
 			// increment i
-			for (i = 0; i < keys.length && currentNode.children[i + 1] != null && studentId > keys[i]; i++)
-				;
+			for (i = 0; i < keys.length && currentNode.children[i + 1] != null && studentId > keys[i]; i++);
 			currentNode = currentNode.children[i];
 		}
 
 		int i;
-		for (i = 0; i < currentNode.n && currentNode.keys[i] != studentId; i++)
-			;
+		for (i = 0; i < currentNode.n && currentNode.keys[i] != studentId; i++);
 
 		if (currentNode.keys[i] == studentId) {
 			return currentNode.values[i];
