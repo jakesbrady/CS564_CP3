@@ -39,13 +39,32 @@ class BTree {
     }
 
     long search(long studentId) {
-        /**
-         * TODO:
-         * Implement this function to search in the B+Tree.
-         * Return recordID for the given StudentID.
-         * Otherwise, print out a message that the given studentId has not been found in the table and return -1.
-         */
-        return -1;
+        **
+		 * TODO: Implement this function to search in the B+Tree. Return recordID for
+		 * the given StudentID. Otherwise, print out a message that the given studentId
+		 * has not been found in the table and return -1.
+		 */
+		BTreeNode currentNode = root;
+		while (!currentNode.leaf) {
+			long[] keys = currentNode.keys;
+
+			int i;
+			// okay so a little weird to use the for loop like this, but we just need to
+			// increment i
+			for (i = 0; i < keys.length && currentNode.children[i + 1] != null && studentId > keys[i]; i++)
+				;
+			currentNode = currentNode.children[i];
+		}
+
+		int i;
+		for (i = 0; i < currentNode.n && currentNode.keys[i] != studentId; i++)
+			;
+
+		if (currentNode.keys[i] == studentId) {
+			return currentNode.values[i];
+		} else {
+			return -1;
+		}
     }
 
     //JSB: IN PROGRESS
@@ -296,12 +315,20 @@ class BTree {
 
         List<Long> listOfRecordID = new ArrayList<>();
 
-        /**
-         * TODO:
-         * Implement this function to print the B+Tree.
-         * Return a list of recordIDs from left to right of leaf nodes.
-         *
-         */
-        return listOfRecordID;
+		/**
+		 * TODO: Implement this function to print the B+Tree. Return a list of recordIDs
+		 * from left to right of leaf nodes.
+		 *
+		 */
+		BTreeNode currentNode = root;
+		while (!currentNode.leaf) {
+			currentNode = currentNode.children[0];
+		}
+		while (currentNode.next != null) {
+			for (int i = 0; i < currentNode.n; i++) {
+				listOfRecordID.add(currentNode.values[i]);
+			}
+		}
+		return listOfRecordID;
     }
 }
