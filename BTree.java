@@ -48,28 +48,44 @@ class BTree {
         return -1;
     }
 
+    //JSB: IN PROGRESS
+    //Inserts an entry into subtree.
+    //ASSUMPTIONS:
+    //root=nodepointer = this.root (the tree we are inserting into)
+    //degree is d
+    //need to track isNewChildEntry
     BTree insert(Student student) {
         /**
          * TODO:
          * Implement this function to insert in the B+Tree.
          * Also, insert in student.csv after inserting in B+Tree.
          */
-        //If the optional RecordID parameter is not provided, use a random generator to generate 
-        //a RecordID for this student, then update both the B+ tree index and the Student table.
-        if(student==null) {
-            long generatedID = generateRandomID();
-            this.t = generatedID;
-            student.studentID = generatedID;
-        }
+        //initialize things
         
-            
+        
+        BTree updatedTree = insert(
         return this;
     }
 
-    //Helper to generate a random record id
-    Long generateRandomID() {
-        return ThreadLocalRandom.current().nextInt(100000, 1000000);
+    //helper to recursively insert
+    private BTree insert(BTreeNode nodepointer, Student student, boolean newchildentry) {
+        
+        if(!root.leaf) {
+            int studentKey = student.studentId;
+            for(int i=0; i < root.keys.size(); i++) {
+                if(studentKey >= root.keys[i]) {
+                    //this is the subtree
+                    
+                }
+            }
+    
+        } else { //is not leaf node
+        
+        }
+        return this;
+        
     }
+
 
     boolean delete(long studentId) {
         /**
