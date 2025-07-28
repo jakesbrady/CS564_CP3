@@ -25,7 +25,10 @@ class BTreeNode {
      * true when node is leaf. Otherwise false
      */
     boolean leaf;
-
+    /**
+     * point to other previous node when it is a leaf node. Otherwise null
+     */
+    BTreeNode previous;
     /**
      * point to other next node when it is a leaf node. Otherwise null
      */
@@ -38,6 +41,7 @@ class BTreeNode {
         this.keys = new long[2 * t];
         this.children = new BTreeNode[2 * t + 1];
         this.n = 0;
+        this.previous = null;
         this.next = null;
         this.values = new long[2 * t];
     }
