@@ -19,7 +19,7 @@ class BTree {
      */
     private BTreeNode root;
 
-    private BTreeNode[] nodes;
+    //private BTreeNode[] nodes;
     /**
      * Number of key-value pairs allowed in the tree/the minimum degree of B+Tree
      **/
@@ -27,14 +27,12 @@ class BTree {
 
     BTree(int t) {
         this.root = null;
-        this.nodes = null;
         this.t = t;
     }
 
         //Constructor to help us with recursion
     BTree(BTreeNode root, BTreeNode[] nodes, int t) {
         this.root = root;
-        this.nodes = nodes;
         this.t = t;
     }
 
@@ -105,19 +103,11 @@ class BTree {
 
 
     boolean delete(long studentId) {
-        /**
-         * TODO:
-         * Implement this function to delete in the B+Tree.
-         * Also, delete in student.csv after deleting in B+Tree, if it exists.
-         * Return true if the student is deleted successfully otherwise, return false.
-         */
-
         BTree tempTree = delete(studentId, this);
 
         if(tempTree != null)
         {
             this.root = tempTree.root;
-            this.nodes = tempTree.nodes;
         }
 
         return tempTree == null;
@@ -135,10 +125,8 @@ class BTree {
             return null;
         }
 
-        //TODO: check the root node first?
-
         //loop through each subnode
-        for(BTreeNode node : tree.nodes)
+        for(BTreeNode node : tree.root.children)
         {
             //Check the last/biggest value in this node; if it's too small, keep going
             if (recordId <= node.values[node.values.length - 1])
@@ -150,15 +138,38 @@ class BTree {
                     BTree tempTree = delete(recordId, new BTree(node, node.children, t));
 
                     //Check for merges
-                    for(BTreeNode mergedNode: tempTree.nodes)
+                    for(BTreeNode mergedNode: tempTree.root.children)
                     {
                         if(mergedNode.children.length < mergedNode.n) //There was a merge
                         {
-                            //TODO: update the values of mergedNode with the valus of each of the children
+                            BTreeNode[] updatedChildren = new BTreeNode[mergedNode.children.length - 1];
+                            for(int i = 0; i < mergedNode.children.length; i ++)
+                            {
+                                //Check the value of each parent node against the largest of the child nodes
+                                if(mergedNode.keys[i] <= mergedNode.children[i].keys[mergedNode.children[i].keys.length - 1])
+                                {
+                                    //Update all but the node that was merged
+                                    updatedChildren[i] = mergedNode.children[i];
+                                }
+                            }
+                            //Update the merged node
+                            mergedNode.children = updatedChildren;
                             mergedNode.n--;
+
+                            if(mergedNode.n < t/2)
+                            {
+                                //Oops we have to merge this one, too
+                                mergedNode = merge(mergedNode);
+                                //We don't have to worry about the children; they're already taken care of
+                            }
                         }
                         
-                        //TODO: check for rebalanced nodes
+                        for(int i = 0; i < mergedNode.children.length - 1; i ++)
+                        {
+                            //Update pointers to the values of the smallest element in the *next* node
+                            mergedNode.keys[i] = mergedNode.children[i + 1].keys[0];
+                            mergedNode.values[i] = mergedNode.children[i + 1].values[0];
+                        }
                     }
 
                     return tempTree;
@@ -222,11 +233,12 @@ class BTree {
                     //update the node with the "new" keys/values
                     node.keys = updatedKeys;
                     node.values = updatedValues;
+                    node.n--;
 
                     if(node.n < t/2)
                     {
                         //This node is now too empty; we need to either rebalance or merge
-                        if(node.next != null && node.next.n >= t/2)
+                        if(node.next != null && node.next.n > t/2)
                         {
                             //The next node has an element to spare
 
@@ -248,7 +260,7 @@ class BTree {
                             node.next.n--;
                         }
 
-                        else if(node.previous != null && node.previous.n >= t/2)
+                        else if(node.previous != null && node.previous.n > t/2)
                         {
                             //The previous node has an element to spare
 
@@ -275,32 +287,7 @@ class BTree {
                         else
                         {
                             //We have to merge; move all the elements from the next node into this one
-                            long[] mergedKeys = new long[node.n + node.next.n];
-                            long[] mergedValues = new long[node.n + node.next.n];
-                            
-                            //Add this node's elements
-                            for(int i = 0; i < node.n; i++)
-                            {
-                                mergedKeys[i] = node.keys[i];
-                                mergedValues[i] = node.keys[i];
-                            }
-                            
-                            //Add the next node's elements
-                            for(int i = 0; i < node.next.n; i++)
-                            {
-                                //Keep going where you left off
-                                mergedKeys[node.n - 1 + i] = node.next.keys[i];
-                                mergedValues[node.n - 1 + i] = node.next.keys[i];
-                            }
-
-                            //Update the node
-                            node.keys = mergedKeys;
-                            node.values = mergedValues;
-                            node.n += node.next.n;
-                            
-                            //can't forget to update the pointers
-                            node.next = node.next.next; 
-                            node.next.previous = node;
+                            node = merge(node);
                         }
                     }
                 }
@@ -309,6 +296,36 @@ class BTree {
         return null;
     }
 
+    BTreeNode merge(BTreeNode nodeToMerge)
+    {
+                            long[] mergedKeys = new long[nodeToMerge.n + nodeToMerge.next.n];
+                            long[] mergedValues = new long[nodeToMerge.n + nodeToMerge.next.n];
+                            
+                            //Add this node's elements
+                            for(int i = 0; i < nodeToMerge.n; i++)
+                            {
+                                mergedKeys[i] = nodeToMerge.keys[i];
+                                mergedValues[i] = nodeToMerge.keys[i];
+                            }
+                            
+                            //Add the next node's elements
+                            for(int i = 0; i < nodeToMerge.next.n; i++)
+                            {
+                                //Keep going where you left off
+                                mergedKeys[nodeToMerge.n - 1 + i] = nodeToMerge.next.keys[i];
+                                mergedValues[nodeToMerge.n - 1 + i] = nodeToMerge.next.keys[i];
+                            }
+
+                            //Update the node
+                            nodeToMerge.keys = mergedKeys;
+                            nodeToMerge.values = mergedValues;
+                            nodeToMerge.n += nodeToMerge.next.n;
+                            
+                            //can't forget to update the pointers
+                            nodeToMerge.next = nodeToMerge.next.next; 
+                            nodeToMerge.next.previous = nodeToMerge;
+                            return nodeToMerge;
+    }
     List<Long> print() {
 
         List<Long> listOfRecordID = new ArrayList<>();
