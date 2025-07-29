@@ -37,130 +37,128 @@ class BTree {
     }
 
     long search(long studentId) {
-        	/**
+		/**
 		 * TODO: Implement this function to search in the B+Tree. Return recordID for
 		 * the given StudentID. Otherwise, print out a message that the given studentId
 		 * has not been found in the table and return -1.
 		 */
-		BTreeNode currentNode = root;
-		while (!currentNode.leaf) {
-			long[] keys = currentNode.keys;
+		BTreeNode currentNode = getLeaf(studentId);
 
-			int i;
-			// okay so a little weird to use the for loop like this, but we just need to
-			// increment i
-			for (i = 0; i <= keys.length && currentNode.children[i + 1] != null && studentId >= keys[i]; i++);
-			currentNode = currentNode.children[i];
+		int i = 0;
+		while (i < currentNode.n && currentNode.keys[i] != studentId) {
+			i++;
 		}
-
-		int i;
-		for (i = 0; i < currentNode.n && currentNode.keys[i] != studentId; i++);
 
 		if (currentNode.keys[i] == studentId) {
 			return currentNode.values[i];
 		} else {
 			return -1;
 		}
-    }
+	}
 
-//JSB: This is a helper to get the child of the passed in curNode, assumes that the passed in curNode is not a leaf.
-	//Used by insert. Andrew to insert into seach if he wants.
-private BTreeNode getChild(BTreeNode curNode, long studentID) {
-	int i;
-	//The following increments i just enough to get to the child of the current node that guides us closer to a potential node that may contain student id. 
-	//We walk through the keys array, and compare student id against the key value, and then its cooresponsing children to find where we need to go next.
-	for (i = 0; i < curNode.keys.length && curNode.children[i + 1] != null && studentID >= curNode.keys[i]; i++);
-	return curNode.children[i];
-}
-
-    //JSB: IN PROGRESS
-    //Inserts an entry into subtree.
-    //ASSUMPTIONS:
-    //root=nodepointer = this.root (the tree we are inserting into)
-    //degree is d
-    //need to track isNewChildEntry
-    BTree insert(Student student) {
-        /**
-         * TODO:
-         * Implement this function to insert in the B+Tree.
-         * Also, insert in student.csv after inserting in B+Tree.
-         */
-        //initialize things
-        
-        
-        BTree updatedTree = insert(
-        return this;
-    }
-
-    //helper to recursively insert
-    private BTree insert(BTreeNode nodepointer, Student student, BTreeNode newchildentry) {
-        if(!nodepointer.leaf) {
-	    int i; //track subtree 
-            int studentKey = student.studentId;
-            for(i=0; i < nodepointer.keys.length; i++) { 
-                if(studentKey >= nodepointer.keys[i]) { 
-		    //TO DO: set i
+	// ADA: This is a helper to get the leaf that a given student ID might be on
+	// Used by insert. Andrew to insert into seach if he wants.
+	private BTreeNode getLeaf(long studentID) {
+		BTreeNode currentNode = root;
+		while (!currentNode.leaf) {
+			currentNode = getChild(currentNode, studentID);
 		}
-	    }
-	    insert(nodepointer,student,newchildentry);
-	    if(newchildentry.next==null) {
-	        return;
-	    } else {
-		if(nodepointer.n < 2 * t + 1) { //node has space
-		  //put newchildentry on it  
-		} else {
-		    
+		return currentNode;
+	}
+
+//ADA: This is a helper to get the child of the passed in curNode, assumes that the passed in curNode is not a leaf.
+	// Used by insert.
+	private BTreeNode getChild(BTreeNode curNode, long studentID) {
+		int i = 0;
+		// The following increments i just enough to get to the child of the current
+		// node that guides us closer to a potential node that may contain student id.
+		// We walk through the keys array, and compare student id against the key value,
+		// and then its cooresponsing children to find where we need to go next.
+		while (i < curNode.keys.length && curNode.children[i + 1] != null && studentID >= curNode.keys[i]) {
+			i++;
 		}
-            }
-         } else { //we found the leaf node (where we are inserting)
-	    if(nodepointer.n < nodepointer.keys.length) { // number of k/v pairs < size of keys array? There is space!
-		nodepointer.n++; //adding a new k/v pair
-		nodepointer.keys[n-1]=student.studentId;
-		//TO DO: Insert record id into values (what is record id??)
-		newchildentry = null;
-		return;
-	    } else { //leaf is full :(
-		BTreeNode L2 = splitNodes(nodepointer, d);
-		newchildentry.keys[0] = L2.keys[0];
-		newchildentry.next = L2;
-		return;
-	    }
-        }
-        return this;
-    }
+		return curNode.children[i];
+	}
+
+	// JSB: IN PROGRESS
+	// Inserts an entry into subtree.
+	// ASSUMPTIONS:
+	// root=nodepointer = this.root (the tree we are inserting into)
+	// degree is d
+	// need to track isNewChildEntry
+	BTree insert(Student student) {
+		/**
+		 * TODO: Implement this function to insert in the B+Tree. Also, insert in
+		 * student.csv after inserting in B+Tree.
+		 */
+		// initialize things
+
+		root = insert(root, student);
+		return this;
+	}
+
+	// helper to recursively insert
+	private BTreeNode insert(BTreeNode nodepointer, Student student) {
+		if (!nodepointer.leaf) {
+
+			BTreeNode newchildentry = insert(getChild(nodepointer, student.studentId), student);
+			if (newchildentry == null) {
+				return null;
+			} else {
+				if (nodepointer.n < nodepointer.values.length) { // node has space
+					// put newchildentry on it
+				} else {
+					newchildentry = splitNodes(nodepointer);
+				}
+				return newchildentry;
+			}
+		} else { // we found the leaf node (where we are inserting)
+			if (nodepointer.n < nodepointer.keys.length) { // number of k/v pairs < size of keys array? There is space!
+				nodepointer.n++; // adding a new k/v pair
+				nodepointer.keys[nodepointer.n - 1] = student.studentId;
+				// TO DO: Insert record id into values (what is record id??)
+				return null;
+			} else { // leaf is full :(
+				BTreeNode L2 = splitNodes(nodepointer);
+
+				return L2;
+			}
+		}
+	}
 
 //JSB helper
 //function to split a node into 2 nodes. Returns the newly created node, and updates the original to contain the
-private BTreeNode splitNodes(BTreeNode nodeToSplit, int d) {
-    BTreeNode L2 = new BTreeNode(d, nodeToSplit.leaf);
-    // Move keys: from d+1 to 2d into L2
-    for (int i = 0; i < d; i++) {
-        L2.keys[i] = nodeToSplit.keys[d + 1 + i];
-        nodeToSplit.keys[d + 1 + i] = 0; // clear old reference
-    }
-    // For leaf: move values too
-    if (nodeToSplit.leaf) {
-        for (int i = 0; i < d; i++) {
-            L2.values[i] = nodeToSplit.values[d + 1 + i];
-            nodeToSplit.values[d + 1 + i] = 0;
-        }
-        // Handle next pointer
-        L2.next = nodeToSplit.next;
-        nodeToSplit.next = L2;
-    } else {
-        // Move children: from d+1 to 2d+1 into L2
-        for (int i = 0; i < d + 1; i++) {
-            L2.children[i] = nodeToSplit.children[d + 1 + i];
-            nodeToSplit.children[d + 1 + i] = null;
-        }
-    }
-    // Update counts
-    L2.n = d;
-    nodeToSplit.n = d;
-    // Note: nodeToSplit.keys[d] (the median) will be promoted
-    // Leave it intact or extract it in the caller
-    return L2;
-}
+	private BTreeNode splitNodes(BTreeNode nodeToSplit) {
+		int d = nodeToSplit.t - 1;
+		BTreeNode L2 = new BTreeNode(d, nodeToSplit.leaf);
+		// Move keys: from d+1 to 2d into L2
+		for (int i = 0; i < d; i++) {
+			L2.keys[i] = nodeToSplit.keys[d + 1 + i];
+			nodeToSplit.keys[d + 1 + i] = 0; // clear old reference
+		}
+		// For leaf: move values too
+		if (nodeToSplit.leaf) {
+			for (int i = 0; i < d; i++) {
+				L2.values[i] = nodeToSplit.values[d + 1 + i];
+				nodeToSplit.values[d + 1 + i] = 0;
+			}
+			// Handle next pointer
+			L2.next = nodeToSplit.next;
+			nodeToSplit.next = L2;
+		} else {
+			// Move children: from d+1 to 2d+1 into L2
+			for (int i = 0; i < d + 1; i++) {
+				L2.children[i] = nodeToSplit.children[d + 1 + i];
+				nodeToSplit.children[d + 1 + i] = null;
+			}
+		}
+		// Update counts
+		L2.n = d;
+		nodeToSplit.n = d;
+		// Note: nodeToSplit.keys[d] (the median) will be promoted
+		// Leave it intact or extract it in the caller
+		return L2;
+	}
 
 
     boolean delete(long studentId) {
