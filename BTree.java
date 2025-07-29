@@ -95,32 +95,72 @@ private BTreeNode getChild(BTreeNode curNode, long studentID) {
     //helper to recursively insert
     private BTree insert(BTreeNode nodepointer, Student student, BTreeNode newchildentry) {
         if(!nodepointer.leaf) {
+	    int i; //track subtree 
             int studentKey = student.studentId;
-            for(int i=0; i < nodepointer.keys.length; i++) { 
-                if(studentKey >= nodepointer.keys[i]) { //TODO: check if we need to do a split
-                    insert(nodepointer,student,null)
-                    
-                }
+            for(i=0; i < nodepointer.keys.length; i++) { 
+                if(studentKey >= nodepointer.keys[i]) { 
+		    //TO DO: set i
+		}
+	    }
+	    insert(nodepointer,student,newchildentry);
+	    if(newchildentry.next==null) {
+	        return;
+	    } else {
+		if(nodepointer.n < 2 * t + 1) { //node has space
+		  //put newchildentry on it  
+		} else {
+		    
+		}
             }
          } else { //we found the leaf node (where we are inserting)
-            //check if L has space
-            //if yes: put entry on it, set newchildentry to null, return;
-            //else split L
 	    if(nodepointer.n < nodepointer.keys.length) { // number of k/v pairs < size of keys array? There is space!
 		nodepointer.n++; //adding a new k/v pair
 		nodepointer.keys[n-1]=student.studentId;
-		//TO DO: Insert record id
+		//TO DO: Insert record id into values (what is record id??)
 		newchildentry = null;
 		return;
 	    } else { //leaf is full :(
-		BTreeNode L2 = new BTreeNode(2,
+		BTreeNode L2 = splitNodes(nodepointer, d);
+		newchildentry.keys[0] = L2.keys[0];
+		newchildentry.next = L2;
+		return;
 	    }
-            
-            
         }
         return this;
-        
     }
+
+//JSB helper
+//function to split a node into 2 nodes. Returns the newly created node, and updates the original to contain the
+private BTreeNode splitNodes(BTreeNode nodeToSplit, int d) {
+    BTreeNode L2 = new BTreeNode(d, nodeToSplit.leaf);
+    // Move keys: from d+1 to 2d into L2
+    for (int i = 0; i < d; i++) {
+        L2.keys[i] = nodeToSplit.keys[d + 1 + i];
+        nodeToSplit.keys[d + 1 + i] = 0; // clear old reference
+    }
+    // For leaf: move values too
+    if (nodeToSplit.leaf) {
+        for (int i = 0; i < d; i++) {
+            L2.values[i] = nodeToSplit.values[d + 1 + i];
+            nodeToSplit.values[d + 1 + i] = 0;
+        }
+        // Handle next pointer
+        L2.next = nodeToSplit.next;
+        nodeToSplit.next = L2;
+    } else {
+        // Move children: from d+1 to 2d+1 into L2
+        for (int i = 0; i < d + 1; i++) {
+            L2.children[i] = nodeToSplit.children[d + 1 + i];
+            nodeToSplit.children[d + 1 + i] = null;
+        }
+    }
+    // Update counts
+    L2.n = d;
+    nodeToSplit.n = d;
+    // Note: nodeToSplit.keys[d] (the median) will be promoted
+    // Leave it intact or extract it in the caller
+    return L2;
+}
 
 
     boolean delete(long studentId) {
