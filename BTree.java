@@ -31,7 +31,7 @@ class BTree {
     }
 
         //Constructor to help us with recursion
-    BTree(BTreeNode root, BTreeNode[] nodes, int t) {
+    BTree(BTreeNode root, int t) {
         this.root = root;
         this.t = t;
     }
@@ -196,7 +196,7 @@ private BTreeNode splitNodes(BTreeNode nodeToSplit, int d) {
                 if(!node.leaf)
                 {
                     //No; we'll want to keep going, but once we're done, we'll want to rebuild the tree and send it back up
-                    BTree tempTree = delete(recordId, new BTree(node, node.children, t));
+                    BTree tempTree = delete(recordId, new BTree(node, t));
 
                     //Check for merges
                     for(BTreeNode mergedNode: tempTree.root.children)
