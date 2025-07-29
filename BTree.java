@@ -189,167 +189,163 @@ private BTreeNode splitNodes(BTreeNode nodeToSplit, int d) {
         //loop through each subnode
         for(BTreeNode node : tree.root.children)
         {
-            //Check the last/biggest value in this node; if it's too small, keep going
-            if (recordId <= node.values[node.values.length - 1])
+            //We're in the right node, but are we at the leaf yet?
+            if(!node.leaf)
             {
-                //We're in the right node, but are we at the leaf yet?
-                if(!node.leaf)
+                //No; we'll want to keep going, but once we're done, we'll want to rebuild the tree and send it back up
+                BTree tempTree = delete(recordId, new BTree(node, t));
+
+                //Check for merges
+                for(BTreeNode mergedNode: tempTree.root.children)
                 {
-                    //No; we'll want to keep going, but once we're done, we'll want to rebuild the tree and send it back up
-                    BTree tempTree = delete(recordId, new BTree(node, t));
-
-                    //Check for merges
-                    for(BTreeNode mergedNode: tempTree.root.children)
+                    if(mergedNode.children.length < mergedNode.n) //There was a merge
                     {
-                        if(mergedNode.children.length < mergedNode.n) //There was a merge
+                        BTreeNode[] updatedChildren = new BTreeNode[mergedNode.children.length - 1];
+                        for(int i = 0; i < mergedNode.children.length; i ++)
                         {
-                            BTreeNode[] updatedChildren = new BTreeNode[mergedNode.children.length - 1];
-                            for(int i = 0; i < mergedNode.children.length; i ++)
+                            //Check the value of each parent node against the largest of the child nodes
+                            if(mergedNode.keys[i] <= mergedNode.children[i].keys[mergedNode.children[i].keys.length - 1])
                             {
-                                //Check the value of each parent node against the largest of the child nodes
-                                if(mergedNode.keys[i] <= mergedNode.children[i].keys[mergedNode.children[i].keys.length - 1])
-                                {
-                                    //Update all but the node that was merged
-                                    updatedChildren[i] = mergedNode.children[i];
-                                }
-                            }
-                            //Update the merged node
-                            mergedNode.children = updatedChildren;
-                            mergedNode.n--;
-
-                            if(mergedNode.n < t/2)
-                            {
-                                //Oops we have to merge this one, too
-                                mergedNode = merge(mergedNode);
-                                //We don't have to worry about the children; they're already taken care of
+                                //Update all but the node that was merged
+                                updatedChildren[i] = mergedNode.children[i];
                             }
                         }
-                        
-                        for(int i = 0; i < mergedNode.children.length - 1; i ++)
+                        //Update the merged node
+                        mergedNode.children = updatedChildren;
+                        mergedNode.n--;
+
+                        if(mergedNode.n < t/2)
                         {
-                            //Update pointers to the values of the smallest element in the *next* node
-                            mergedNode.keys[i] = mergedNode.children[i + 1].keys[0];
-                            mergedNode.values[i] = mergedNode.children[i + 1].values[0];
+                            //Oops we have to merge this one, too
+                            mergedNode = merge(mergedNode);
+                            //We don't have to worry about the children; they're already taken care of
                         }
                     }
-
-                    return tempTree;
+                    
+                    for(int i = 0; i < mergedNode.children.length - 1; i ++)
+                    {
+                        //Update pointers to the values of the smallest element in the *next* node
+                        mergedNode.keys[i] = mergedNode.children[i + 1].keys[0];
+                        mergedNode.values[i] = mergedNode.children[i + 1].values[0];
+                    }
                 }
-                else
+
+                return tempTree;
+            }
+            else
+            {
+                //We're in a leaf node; find the element to delete
+                long[] updatedKeys = new long[node.keys.length - 1];
+                long[] updatedValues = new long[node.values.length - 1];
+                for(int i = 0; i < node.keys.length; i++)
                 {
-                    //We're in a leaf node; find the element to delete
-                    long[] updatedKeys = new long[node.keys.length - 1];
-                    long[] updatedValues = new long[node.values.length - 1];
-                    for(int i = 0; i < node.keys.length; i++)
+                    if(node.values[i] == recordId) //this is the element to delete
                     {
-                        if(node.values[i] == recordId) //this is the element to delete
+                        //loop through and add all but the element in question to the temp arrays
+                        for(int j=0; j < node.keys.length; j++)
                         {
-                            //loop through and add all but the element in question to the temp arrays
-                            for(int j=0; j < node.keys.length; j++)
+                            if(j != i)
                             {
-                                if(j != i)
+                                updatedKeys[j] = node.keys[j];
+                                updatedValues[j] = node.values[j];
+                                node.n--;
+
+                                //Remove from Student.csv        
+                                try
                                 {
-                                    updatedKeys[j] = node.keys[j];
-                                    updatedValues[j] = node.values[j];
-                                    node.n--;
-
-                                    //Remove from Student.csv        
-                                    try
+                                    File studentFile = new File("src/Student.csv");
+                                    File tempStudentFile = new File("src/TempStudent.csv");
+                                    Scanner scan = new Scanner(studentFile);
+                                    FileWriter writer = new FileWriter(tempStudentFile);
+                                    while(scan.hasNextLine())
                                     {
-                                        File studentFile = new File("src/Student.csv");
-                                        File tempStudentFile = new File("src/TempStudent.csv");
-                                        Scanner scan = new Scanner(studentFile);
-                                        FileWriter writer = new FileWriter(tempStudentFile);
-                                        while(scan.hasNextLine())
+                                        String nextLine = scan.nextLine();
+                                        String fileStudentId = nextLine.substring(0,nextLine.indexOf(','));
+                                        
+                                        //write all lines except the match to a temporary file
+                                        if(Long.parseLong(fileStudentId) != studentId)
                                         {
-                                            String nextLine = scan.nextLine();
-                                            String fileStudentId = nextLine.substring(0,nextLine.indexOf(','));
-                                            
-                                            //write all lines except the match to a temporary file
-                                            if(Long.parseLong(fileStudentId) != studentId)
-                                            {
-                                                writer.write(nextLine);
-                                            }
+                                            writer.write(nextLine);
                                         }
-                                        scan.close();
-                                        writer.close();
+                                    }
+                                    scan.close();
+                                    writer.close();
 
-                                        //Overwrite the original student file with the temporary one
-                                        tempStudentFile.renameTo(studentFile);
+                                    //Overwrite the original student file with the temporary one
+                                    tempStudentFile.renameTo(studentFile);
 
-                                    }
-                                    catch (FileNotFoundException e)
-                                    {
-                                        System.out.println("File not found.");
-                                        e.printStackTrace();
-                                    }
-                                    catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
+                                }
+                                catch (FileNotFoundException e)
+                                {
+                                    System.out.println("File not found.");
+                                    e.printStackTrace();
+                                }
+                                catch (Exception e) {
+                                    e.printStackTrace();
                                 }
                             }
                         }
                     }
+                }
 
-                    //update the node with the "new" keys/values
-                    node.keys = updatedKeys;
-                    node.values = updatedValues;
-                    node.n--;
+                //update the node with the "new" keys/values
+                node.keys = updatedKeys;
+                node.values = updatedValues;
+                node.n--;
 
-                    if(node.n < t/2)
+                if(node.n < t/2)
+                {
+                    //This node is now too empty; we need to either rebalance or merge
+                    if(node.next != null && node.next.n > t/2)
                     {
-                        //This node is now too empty; we need to either rebalance or merge
-                        if(node.next != null && node.next.n > t/2)
+                        //The next node has an element to spare
+
+                        //Add the first element of the next node to the end of this node
+                        node.keys[node.keys.length] = node.next.keys[0];
+                        node.values[node.values.length] = node.next.values[0];
+
+                        //Remove the first element of the next node
+                        long[] updatedNextKeys = new long[node.next.keys.length - 1];
+                        long[] updatedNextValues = new long[node.next.values.length - 1];
+                        for(int i = 1; i <node.next.n; i++)
                         {
-                            //The next node has an element to spare
-
-                            //Add the first element of the next node to the end of this node
-                            node.keys[node.keys.length] = node.next.keys[0];
-                            node.values[node.values.length] = node.next.values[0];
-
-                            //Remove the first element of the next node
-                            long[] updatedNextKeys = new long[node.next.keys.length - 1];
-                            long[] updatedNextValues = new long[node.next.values.length - 1];
-                            for(int i = 1; i <node.next.n; i++)
-                            {
-                                    updatedNextKeys[i] = node.next.keys[i];
-                                    updatedNextValues[i] = node.next.values[i];
-                            }
-                            //update the next node with the "new" keys/values
-                            node.next.keys = updatedNextKeys;
-                            node.next.values = updatedNextValues;
-                            node.next.n--;
+                                updatedNextKeys[i] = node.next.keys[i];
+                                updatedNextValues[i] = node.next.values[i];
                         }
+                        //update the next node with the "new" keys/values
+                        node.next.keys = updatedNextKeys;
+                        node.next.values = updatedNextValues;
+                        node.next.n--;
+                    }
 
-                        else if(node.previous != null && node.previous.n > t/2)
+                    else if(node.previous != null && node.previous.n > t/2)
+                    {
+                        //The previous node has an element to spare
+
+                        //Add the last element of the previous node to the beginning of this node
+                        long[] extendedKeys = new long[node.next.keys.length + 1];
+                        long[] extendedValues = new long[node.next.values.length + 1];
+                        for(int i = node.n; i >= 1; i--)
                         {
-                            //The previous node has an element to spare
-
-                            //Add the last element of the previous node to the beginning of this node
-                            long[] extendedKeys = new long[node.next.keys.length + 1];
-                            long[] extendedValues = new long[node.next.values.length + 1];
-                            for(int i = node.n; i >= 1; i--)
-                            {
-                                //Go backwards through the array, copying the value ahead one index
-                                extendedKeys[i] = node.keys[i-1];
-                                extendedValues[i] = node.values[i-1];
-                            }
-                            node.keys = extendedKeys;
-                            node.values = extendedValues;
-                            node.keys[0] = node.previous.keys[node.previous.keys.length - 1];
-                            node.values[0] = node.previous.values[node.previous.values.length - 1];
-
-                            //Remove the last element of the previous node
-                            node.previous.keys = Arrays.copyOf(node.previous.keys, node.previous.keys.length -1);
-                            node.previous.values = Arrays.copyOf(node.previous.values, node.previous.values.length -1);
-                            node.previous.n--;
+                            //Go backwards through the array, copying the value ahead one index
+                            extendedKeys[i] = node.keys[i-1];
+                            extendedValues[i] = node.values[i-1];
                         }
+                        node.keys = extendedKeys;
+                        node.values = extendedValues;
+                        node.keys[0] = node.previous.keys[node.previous.keys.length - 1];
+                        node.values[0] = node.previous.values[node.previous.values.length - 1];
 
-                        else
-                        {
-                            //We have to merge; move all the elements from the next node into this one
-                            node = merge(node);
-                        }
+                        //Remove the last element of the previous node
+                        node.previous.keys = Arrays.copyOf(node.previous.keys, node.previous.keys.length -1);
+                        node.previous.values = Arrays.copyOf(node.previous.values, node.previous.values.length -1);
+                        node.previous.n--;
+                    }
+
+                    else
+                    {
+                        //We have to merge; move all the elements from the next node into this one
+                        node = merge(node);
                     }
                 }
             }
