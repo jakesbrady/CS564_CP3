@@ -145,6 +145,7 @@ class BTree {
 			// Handle next pointer
 			L2.next = nodeToSplit.next;
 			nodeToSplit.next = L2;
+			L2.previous = nodeToSplit;
 		} else {
 			// Move children: from d+1 to 2d+1 into L2
 			for (int i = 0; i < d + 1; i++) {
