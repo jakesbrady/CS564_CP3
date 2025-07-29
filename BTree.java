@@ -174,7 +174,7 @@ private BTreeNode splitNodes(BTreeNode nodeToSplit, int d) {
         return tempTree == null;
     }
 
-    private BTree delete(long studentId, BTree tree)
+    private BTree delete(long studentId, BTree subTree)
     {
 
         long recordId = search(studentId);
@@ -187,9 +187,9 @@ private BTreeNode splitNodes(BTreeNode nodeToSplit, int d) {
         }
 
         //loop through each subnode
-        for(BTreeNode node : tree.root.children)
+        for(BTreeNode node : subTree.root.children)
         {
-            //We're in the right node, but are we at the leaf yet?
+            //Are we at the leaf yet?
             if(!node.leaf)
             {
                 //No; we'll want to keep going, but once we're done, we'll want to rebuild the tree and send it back up
