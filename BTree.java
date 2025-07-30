@@ -181,7 +181,7 @@ class BTree {
 //function to split a node into 2 nodes. Returns the newly created node, and updates the original to contain the
 	private BTreeNode splitNodes(BTreeNode nodeToSplit) {
 		int d = nodeToSplit.t - 1;
-		BTreeNode L2 = new BTreeNode(d, nodeToSplit.leaf);
+		BTreeNode L2 = new BTreeNode(this.t, nodeToSplit.leaf);
 		// Move keys: from d+1 to 2d into L2
 		for (int i = 0; i < d; i++) {
 			L2.keys[i] = nodeToSplit.keys[d + 1 + i];
