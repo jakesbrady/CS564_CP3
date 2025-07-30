@@ -123,7 +123,7 @@ public class BTreeMain {
 
         while (scan.hasNextLine()) {
         	line = scan.nextLine().split(",");
-        	if (line.length==5) {
+        	if (line.length==6) {
         		studentId=Long.parseLong(line[0]);
         		studentName = line[1];
         		major = line[2];
