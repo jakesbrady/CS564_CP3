@@ -42,6 +42,9 @@ class BTree {
 		 * the given StudentID. Otherwise, print out a message that the given studentId
 		 * has not been found in the table and return -1.
 		 */
+		if (root == null) {
+			return -1;
+		}
 		BTreeNode currentNode = getLeaf(studentId);
 
 		int i = 0;
@@ -69,6 +72,10 @@ class BTree {
 //ADA: This is a helper to get the child of the passed in curNode, assumes that the passed in curNode is not a leaf.
 	// Used by insert.
 	private BTreeNode getChild(BTreeNode curNode, long studentID) {
+		return curNode.children[getChildIndex(curNode, studentID)];
+	}
+
+	private int getChildIndex(BTreeNode curNode, long studentID) {
 		int i = 0;
 		// The following increments i just enough to get to the child of the current
 		// node that guides us closer to a potential node that may contain student id.
@@ -77,7 +84,7 @@ class BTree {
 		while (i < curNode.keys.length && curNode.children[i + 1] != null && studentID >= curNode.keys[i]) {
 			i++;
 		}
-		return curNode.children[i];
+		return i;
 	}
 
 	// JSB: IN PROGRESS
@@ -92,8 +99,18 @@ class BTree {
 		 * student.csv after inserting in B+Tree.
 		 */
 		// initialize things
-
-		root = insert(root, student);
+		if (root == null) {
+			root = new BTreeNode(this.t, true);
+		}
+		BTreeNode newChild = insert(root, student);
+		if (newChild != null) {
+			BTreeNode oldRoot = root;
+			root = new BTreeNode(this.t, false);
+			root.children[0] = oldRoot;
+			root.children[1] = newChild;
+			root.keys[0] = newChild.keys[0];
+			root.n = 1;
+		}
 		return this;
 	}
 
@@ -101,28 +118,62 @@ class BTree {
 	private BTreeNode insert(BTreeNode nodepointer, Student student) {
 		if (!nodepointer.leaf) {
 
-			BTreeNode newchildentry = insert(getChild(nodepointer, student.studentId), student);
+			int childIndex = getChildIndex(nodepointer, student.studentId);
+			BTreeNode newchildentry = insert(nodepointer.children[childIndex], student);
 			if (newchildentry == null) {
 				return null;
 			} else {
-				if (nodepointer.n < nodepointer.values.length) { // node has space
-					// put newchildentry on it
+				if (nodepointer.children[nodepointer.keys.length] == null) { // node has space
+					addNodeToNode(nodepointer, newchildentry, childIndex);
 				} else {
-					newchildentry = splitNodes(nodepointer);
+					BTreeNode L2 = splitNodes(nodepointer);
+					addNodeToNode(nodepointer, newchildentry, 0);
+					newchildentry = L2;
 				}
 				return newchildentry;
 			}
 		} else { // we found the leaf node (where we are inserting)
 			if (nodepointer.n < nodepointer.keys.length) { // number of k/v pairs < size of keys array? There is space!
-				nodepointer.n++; // adding a new k/v pair
-				nodepointer.keys[nodepointer.n - 1] = student.studentId;
-				// TO DO: Insert record id into values (what is record id??)
+				addValueToLeaf(nodepointer, student);
+
 				return null;
 			} else { // leaf is full :(
 				BTreeNode L2 = splitNodes(nodepointer);
 
+				addValueToLeaf(L2, student);
+
 				return L2;
 			}
+		}
+	}
+
+	private void addValueToLeaf(BTreeNode nodepointer, Student student) {
+
+		nodepointer.n++; // adding a new k/v pair
+		nodepointer.keys[nodepointer.n - 1] = student.studentId;
+		int i = 0;
+		while (i < nodepointer.n && nodepointer.keys[i] != student.studentId) {
+			i++;
+		}
+
+		for (int j = nodepointer.n - 1; j > i; j--) {
+			nodepointer.keys[j + 1] = nodepointer.keys[j];
+			nodepointer.values[j + 1] = nodepointer.values[j];
+		}
+
+		nodepointer.keys[i] = student.studentId;
+		nodepointer.values[i] = student.recordId;
+	}
+
+	private void addNodeToNode(BTreeNode nodepointer, BTreeNode nodeToAdd, int addIndex) {
+		for (int i = (nodepointer.keys.length - 1); i > addIndex; i--) {
+			if (nodepointer.children[i] != null) {
+				nodepointer.keys[i] = nodepointer.keys[i - 1];
+				nodepointer.children[i + 1] = nodepointer.children[i];
+			}
+			nodepointer.n++;
+			nodepointer.keys[addIndex] = nodeToAdd.keys[0];
+			nodepointer.children[addIndex + 1] = nodeToAdd;
 		}
 	}
 
@@ -160,19 +211,6 @@ class BTree {
 		// Leave it intact or extract it in the caller
 		return L2;
 	}
-
-
-    boolean delete(long studentId) {
-        BTree tempTree = delete(studentId, this);
-
-        if(tempTree != null)
-        {
-            this.root = tempTree.root;
-        }
-
-        return tempTree == null;
-    }
-
     private BTree delete(long studentId, BTree subTree)
     {
 
