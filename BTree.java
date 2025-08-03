@@ -48,7 +48,7 @@ class BTree {
 		BTreeNode currentNode = getLeaf(studentId);
 
 		int i = 0;
-		while (i < currentNode.n && currentNode.keys[i] != studentId) {
+		while (i < currentNode.n - 1 && currentNode.keys[i] != studentId) {
 			i++;
 		}
 
@@ -87,6 +87,24 @@ class BTree {
 		return i;
 	}
 
+	private int getInsertIndex(BTreeNode curNode, long studentID) {
+		int i = 0;
+		// The following increments i just enough to get to the child of the current
+		// node that guides us closer to a potential node that may contain student id.
+		// We walk through the keys array, and compare student id against the key value,
+		// and then its cooresponsing children to find where we need to go next.
+		if (curNode.leaf) {
+			while (i < curNode.n && studentID >= curNode.keys[i]) {
+				i++;
+			}
+		} else {
+			while (i < curNode.keys.length && curNode.children[i] != null && studentID >= curNode.keys[i]) {
+				i++;
+			}
+		}
+		return i;
+	}
+
 	// JSB: IN PROGRESS
 	// Inserts an entry into subtree.
 	// ASSUMPTIONS:
@@ -103,12 +121,19 @@ class BTree {
 			root = new BTreeNode(this.t, true);
 		}
 		BTreeNode newChild = insert(root, student);
-		if (newChild != null) {
+		if (newChild != null) { // if the function returns it just did a split on roots so we need to grow the
+														// tree heigh.
 			BTreeNode oldRoot = root;
 			root = new BTreeNode(this.t, false);
-			root.children[0] = oldRoot;
-			root.children[1] = newChild;
-			root.keys[0] = newChild.keys[0];
+			if (newChild.keys[0] > oldRoot.keys[0]) {
+				root.children[0] = oldRoot;
+				root.children[1] = newChild;
+				root.keys[0] = newChild.keys[0];
+			} else {
+				root.children[0] = newChild;
+				root.children[1] = oldRoot;
+				root.keys[0] = oldRoot.keys[0];
+			}
 			root.n = 1;
 		}
 		return this;
@@ -124,30 +149,42 @@ class BTree {
 				return null;
 			} else {
 				if (nodepointer.children[nodepointer.keys.length] == null) { // node has space
-					addNodeToNode(nodepointer, newchildentry, childIndex);
+					int placeToInsert = getInsertIndex(nodepointer, newchildentry.keys[0]);
+					addToNode(nodepointer, newchildentry, placeToInsert);
+					return null;
 				} else {
 					BTreeNode L2 = splitNodes(nodepointer);
-					addNodeToNode(nodepointer, newchildentry, 0);
-					newchildentry = L2;
+					int placeToInsert = getInsertIndex(L2, newchildentry.keys[0]);
+					if (placeToInsert == 0) {
+						placeToInsert = getInsertIndex(nodepointer, newchildentry.keys[0]);
+						addToNode(nodepointer, newchildentry, placeToInsert);
+					} else {
+						addToNode(L2, newchildentry, placeToInsert);
+					}
+					return L2;
 				}
-				return newchildentry;
+
 			}
 		} else { // we found the leaf node (where we are inserting)
 			if (nodepointer.n < nodepointer.keys.length) { // number of k/v pairs < size of keys array? There is space!
-				addValueToLeaf(nodepointer, student);
+				addToNode(nodepointer, student);
 
 				return null;
 			} else { // leaf is full :(
 				BTreeNode L2 = splitNodes(nodepointer);
-
-				addValueToLeaf(L2, student);
-
+				int placeToInsert = getInsertIndex(L2, student.studentId);
+				if (placeToInsert == 0) {
+					placeToInsert = getInsertIndex(nodepointer, student.studentId);
+					addToNode(nodepointer, student);
+				} else {
+					addToNode(L2, student);
+				}
 				return L2;
 			}
 		}
 	}
 
-	private void addValueToLeaf(BTreeNode nodepointer, Student student) {
+	private void addToNode(BTreeNode nodepointer, Student student) {
 
 		nodepointer.n++; // adding a new k/v pair
 		nodepointer.keys[nodepointer.n - 1] = student.studentId;
@@ -165,33 +202,32 @@ class BTree {
 		nodepointer.values[i] = student.recordId;
 	}
 
-	private void addNodeToNode(BTreeNode nodepointer, BTreeNode nodeToAdd, int addIndex) {
-		for (int i = (nodepointer.keys.length - 1); i > addIndex; i--) {
+	private void addToNode(BTreeNode nodepointer, BTreeNode nodeToAdd, int addIndex) {
+		for (int i = (nodepointer.keys.length - 1); i >= addIndex; i--) {
 			if (nodepointer.children[i] != null) {
 				nodepointer.keys[i] = nodepointer.keys[i - 1];
 				nodepointer.children[i + 1] = nodepointer.children[i];
 			}
-			nodepointer.n++;
-			nodepointer.keys[addIndex] = nodeToAdd.keys[0];
-			nodepointer.children[addIndex + 1] = nodeToAdd;
 		}
+		nodepointer.n++;
+		nodepointer.keys[addIndex - 1] = nodeToAdd.keys[0];
+		nodepointer.children[addIndex] = nodeToAdd;
 	}
 
 //JSB helper
 //function to split a node into 2 nodes. Returns the newly created node, and updates the original to contain the
 	private BTreeNode splitNodes(BTreeNode nodeToSplit) {
-		int d = nodeToSplit.t - 1;
 		BTreeNode L2 = new BTreeNode(this.t, nodeToSplit.leaf);
 		// Move keys: from d+1 to 2d into L2
-		for (int i = 0; i < d; i++) {
-			L2.keys[i] = nodeToSplit.keys[d + 1 + i];
-			nodeToSplit.keys[d + 1 + i] = 0; // clear old reference
+		for (int i = 0; i < this.t; i++) {
+			L2.keys[i] = nodeToSplit.keys[this.t + i];
+			nodeToSplit.keys[this.t + i] = 0; // clear old reference
 		}
 		// For leaf: move values too
 		if (nodeToSplit.leaf) {
-			for (int i = 0; i < d; i++) {
-				L2.values[i] = nodeToSplit.values[d + 1 + i];
-				nodeToSplit.values[d + 1 + i] = 0;
+			for (int i = 0; i < this.t; i++) {
+				L2.values[i] = nodeToSplit.values[this.t + i];
+				nodeToSplit.values[this.t + i] = 0;
 			}
 			// Handle next pointer
 			L2.next = nodeToSplit.next;
@@ -199,14 +235,14 @@ class BTree {
 			L2.previous = nodeToSplit;
 		} else {
 			// Move children: from d+1 to 2d+1 into L2
-			for (int i = 0; i < d + 1; i++) {
-				L2.children[i] = nodeToSplit.children[d + 1 + i];
-				nodeToSplit.children[d + 1 + i] = null;
+			for (int i = 0; i < this.t + 1; i++) {
+				L2.children[i] = nodeToSplit.children[this.t + i];
+				nodeToSplit.children[this.t + i] = null;
 			}
 		}
 		// Update counts
-		L2.n = d;
-		nodeToSplit.n = d;
+		L2.n = this.t;
+		nodeToSplit.n = this.t;
 		// Note: nodeToSplit.keys[d] (the median) will be promoted
 		// Leave it intact or extract it in the caller
 		return L2;
