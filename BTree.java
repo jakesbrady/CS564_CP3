@@ -96,7 +96,7 @@ class BTree {
 		// The following increments i just enough to get to the child of the current
 		// node that guides us closer to a potential node that may contain student id.
 		// We walk through the keys array, and compare student id against the key value,
-		// and then its cooresponsing children to find where we need to go next.
+		// and then its corresponding children to find where we need to go next.
 		if (curNode.leaf) {
 			while (i < curNode.n && studentId >= curNode.keys[i]) {
 				i++;
@@ -159,24 +159,25 @@ class BTree {
 	 * @return null or a a freshly split node if one was just made
 	 */
 	private BTreeNode insert(BTreeNode nodePointer, Student student) {
-		if (!nodePointer.leaf) {
+		if (!nodePointer.leaf) {//first the non leaf handling
 
-			int childIndex = getChildIndex(nodePointer, student.studentId);
-			BTreeNode newChildEntry = insert(nodePointer.children[childIndex], student);
-			if (newChildEntry == null) {
+			int childIndex = getChildIndex(nodePointer, student.studentId);//this is where we need to put it
+			BTreeNode newChildEntry = insert(nodePointer.children[childIndex], student);//just call recusively
+			
+			if (newChildEntry == null) {//no splits at lower levels
 				return null;
-			} else {
+			} else {//we have to handle the split
 				if (nodePointer.children[nodePointer.keys.length] == null) { // node has space
 					int placeToInsert = getInsertIndex(nodePointer, getSmallestKey(newChildEntry));
-					addEnrty(nodePointer, newChildEntry, placeToInsert);
+					addEnrty(nodePointer, newChildEntry, placeToInsert);//just put it in there
 					return null;
-				} else {
-					if (childIndex >= t) {
+				} else {//no space we we need to split
+					if (childIndex >= t) {//we need to insert it into the right node so we need to bais the split to the left
 						BTreeNode L2 = splitNodes(nodePointer, true);
 						int placeToInsert = getInsertIndex(L2, getSmallestKey(newChildEntry));
 						addEnrty(L2, newChildEntry, placeToInsert);
 						return L2;
-					} else {
+					} else {//inserting to the left so bias the split to the right
 						BTreeNode L2 = splitNodes(nodePointer, false);
 						int placeToInsert = getInsertIndex(nodePointer, getSmallestKey(newChildEntry));
 						addEnrty(L2, newChildEntry, placeToInsert);
@@ -192,13 +193,14 @@ class BTree {
 				addEnrty(nodePointer, student, placeToInsert);
 
 				return null;
-			} else { // leaf is full :(
+			} else { // leaf is full so we need to split
+				//note: we don't need to bias the split because it will be uneven after insertion regardless
 				BTreeNode L2 = splitNodes(nodePointer);
 				int placeToInsert = getInsertIndex(L2, student.studentId);
-				if (placeToInsert == 0) {
+				if (placeToInsert == 0) {//it probably belongs on the left (or either is fine)
 					placeToInsert = getInsertIndex(nodePointer, student.studentId);
 					addEnrty(nodePointer, student, placeToInsert);
-				} else {
+				} else {//it belongs on the right
 					addEnrty(L2, student, placeToInsert);
 				}
 				return L2;
@@ -224,7 +226,7 @@ class BTree {
 	 * @param addIndex the index to add it at as per keys array
 	 */
 	private void addEnrty(BTreeNode nodePointer, long studentId, long recordId, int addIndex) {
-		for (int i = nodePointer.n; i > addIndex; i--) {
+		for (int i = nodePointer.n; i > addIndex; i--) {//shift the keys over
 			nodePointer.keys[i] = nodePointer.keys[i - 1];
 			nodePointer.values[i] = nodePointer.values[i - 1];
 		}
@@ -367,7 +369,7 @@ class BTree {
 		} else {
 			if (root.leaf) {
 				removeEnrty(root, studentId);
-			} else {
+			} else { //we have something to remove from our tree
 				int childIndex = getChildIndex(root, studentId);
 				BTreeNode oldChildEntry = delete(root, root.children[childIndex], studentId);
 				if (oldChildEntry != null) {
@@ -391,26 +393,27 @@ class BTree {
 	private BTreeNode delete(BTreeNode parentPointer, BTreeNode nodePointer, long studentId) {
 		if (!nodePointer.leaf) {
 
+			//lookup where it is
 			int childIndex = getChildIndex(nodePointer, studentId);
 			BTreeNode oldChildEntry = delete(nodePointer, nodePointer.children[childIndex], studentId);
-			if (oldChildEntry == null) {
+			if (oldChildEntry == null) { //no merges on deletion
 				return null;
-			} else {
-				removeEnrty(nodePointer, oldChildEntry);
+			} else {//we had a merge
+				removeEnrty(nodePointer, oldChildEntry);//first remove it from the tree
 				int myIndex = getMyIndex(parentPointer, nodePointer);
-				if (nodePointer.children[t] != null) {
+				if (nodePointer.children[t] != null) {//we are still at or above the min side
 					return null;
-				} else if (myIndex - 1 > 0 && parentPointer.children[myIndex - 1].children[t + 1] != null) {
+				} else if (myIndex - 1 > 0 && parentPointer.children[myIndex - 1].children[t + 1] != null) {//check left node for redistribution
 					parentPointer.keys[myIndex - 1] = redistribute(parentPointer.children[myIndex - 1], nodePointer);
 					return null;
 				} else if (myIndex + 1 < parentPointer.children.length && parentPointer.children[myIndex + 1] != null
-						&& parentPointer.children[myIndex + 1].children[t + 1] != null) {
+						&& parentPointer.children[myIndex + 1].children[t + 1] != null) {//check right node for redistribution
 					parentPointer.keys[myIndex] = redistribute(nodePointer, parentPointer.children[myIndex + 1]);
 					return null;
-				} else if (myIndex - 1 >= 0) {
+				} else if (myIndex - 1 >= 0) {//check left for merge
 					merge(parentPointer.children[myIndex - 1], nodePointer);
 					return nodePointer;
-				} else {
+				} else {//merge to the right
 					merge(nodePointer, parentPointer.children[myIndex + 1]);
 					return parentPointer.children[myIndex + 1];
 				}
@@ -418,19 +421,19 @@ class BTree {
 		} else {
 			removeEnrty(nodePointer, studentId);
 			int myIndex = getMyIndex(parentPointer, nodePointer);
-			if (nodePointer.n >= t) {
+			if (nodePointer.n >= t) {//we are above or at the min size
 				return null;
-			} else if (myIndex - 1 > 0 && parentPointer.children[myIndex - 1].n > t) {
+			} else if (myIndex - 1 > 0 && parentPointer.children[myIndex - 1].n > t) {//check left to redistribution
 				parentPointer.keys[myIndex - 1] = redistribute(parentPointer.children[myIndex - 1], nodePointer);
 				return null;
 			} else if (myIndex + 1 < parentPointer.children.length && parentPointer.children[myIndex + 1] != null
-					&& parentPointer.children[myIndex + 1].n > t) {
+					&& parentPointer.children[myIndex + 1].n > t) {//check right to redistribution
 				parentPointer.keys[myIndex] = redistribute(nodePointer, parentPointer.children[myIndex + 1]);
 				return null;
-			} else if (myIndex - 1 >= 0) {
+			} else if (myIndex - 1 >= 0) { //merge left
 				merge(parentPointer.children[myIndex - 1], nodePointer);
 				return nodePointer;
-			} else {
+			} else { //merge right
 				merge(nodePointer, parentPointer.children[myIndex + 1]);
 				return parentPointer.children[myIndex + 1];
 			}
