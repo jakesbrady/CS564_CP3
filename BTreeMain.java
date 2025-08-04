@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Main Application.
@@ -49,9 +50,7 @@ public class BTreeMain {
                             String major = s2.next();
                             String level = s2.next();
                             int age = Integer.parseInt(s2.next());
-                            /** TODO: Write a logic to generate recordID if it is not provided
-                             *        If it is provided, use the provided value
-                            */
+                            
                             long recordID;
                             if (s2.hasNext()) {
                             	recordID = Long.parseLong(s2.next());
@@ -103,10 +102,6 @@ public class BTreeMain {
 
     private static List<Student> getStudents() {
 
-        /** TODO:
-         * Extract the students information from "Students.csv"
-         * return the list<Students>
-         */
 
     	List<Student> studentList = new ArrayList<>();
     	try {
