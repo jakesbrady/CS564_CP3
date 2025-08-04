@@ -233,6 +233,12 @@ class BTree {
 		nodePointer.values[addIndex] = recordId;
 	}
 
+	/**
+	 * adds a node to another node
+	 * @param nodePointer the node you are adding it to
+	 * @param nodeToAdd the node to add to it
+	 * @param addIndex the index to put it at
+	 */
 	private void addEnrty(BTreeNode nodePointer, BTreeNode nodeToAdd, int addIndex) {
 
 		for (int i = (nodePointer.keys.length - 1); i >= addIndex; i--) {
@@ -259,6 +265,11 @@ class BTree {
 
 	}
 
+	/**
+	 * gets the smallest key in a leaf node (useful for re-keying)
+	 * @param nodePointer the node to get the smallest key of
+	 * @return the smallest key of any entry
+	 */
 	private long getSmallestKey(BTreeNode nodePointer) {
 		BTreeNode curNode = nodePointer;
 		while (!curNode.leaf) {
@@ -267,8 +278,11 @@ class BTree {
 		return curNode.keys[0];
 	}
 
-//JSB helper
-//function to split a node into 2 nodes. Returns the newly created node, and updates the original to contain the
+	/**
+	 * splits the leaf node into multiple
+	 * @param nodeToSplit the node to split
+	 * @return the new node generated from the split
+	 */
 	private BTreeNode splitNodes(BTreeNode nodeToSplit) {
 		BTreeNode L2 = new BTreeNode(t, nodeToSplit.leaf);
 		// Move keys: from d+1 to 2d into L2
@@ -294,6 +308,12 @@ class BTree {
 		return L2;
 	}
 
+	/**
+	 * splits non-leaf node into multiple
+	 * @param nodeToSplit the node to split
+	 * @param moreLeft needed to bias the split more to the left or more to the right based on what side it should be inserted
+	 * @return the new node generated from the split
+	 */
 	private BTreeNode splitNodes(BTreeNode nodeToSplit, boolean moreLeft) {
 		BTreeNode L2 = new BTreeNode(t, nodeToSplit.leaf);
 		// Move keys: from d+1 to 2d into L2
@@ -336,6 +356,11 @@ class BTree {
 		return L2;
 	}
 
+	/**
+	 * deletes an entry from the tree
+	 * @param studentId
+	 * @return if the deletion worked
+	 */
 	boolean delete(long studentId) {
 		if (search(studentId) == -1) {
 			return false;
@@ -356,6 +381,13 @@ class BTree {
 		}
 	}
 
+	/**
+	 * recursive function to delete the entry
+	 * @param parentPointer the parent of the node we are focusing on
+	 * @param nodePointer the node we are focusing on
+	 * @param studentId the studentId to delete
+	 * @return null, or an entry that needs to be removed from the parent
+	 */
 	private BTreeNode delete(BTreeNode parentPointer, BTreeNode nodePointer, long studentId) {
 		if (!nodePointer.leaf) {
 
@@ -406,6 +438,11 @@ class BTree {
 
 	}
 
+	/**
+	 * removeEnrty removes a node from another node
+	 * @param nodePointer node you are removing from
+	 * @param entryToRemove the node you are removing
+	 */
 	private void removeEnrty(BTreeNode nodePointer, BTreeNode entryToRemove) {
 		boolean found = false;
 		for (int i = 0; i < nodePointer.children.length; i++) {
@@ -435,6 +472,11 @@ class BTree {
 		nodePointer.n--;
 	}
 
+	/**
+	 * removes a student from a leaf node
+	 * @param nodePointer the pointer to remove the student from
+	 * @param studentId the id of the student to remove
+	 */
 	private void removeEnrty(BTreeNode nodePointer, long studentId) {
 		boolean found = false;
 		for (int i = 0; i < nodePointer.keys.length; i++) {
@@ -463,6 +505,12 @@ class BTree {
 
 	}
 
+	/**
+	 * evenly splits nodes or values between the nodes (remainder left biased)
+	 * @param leftNode the left node to redistribute
+	 * @param rightNode the right node to redistribute
+	 * @return the key to use between these two nodes
+	 */
 	private long redistribute(BTreeNode leftNode, BTreeNode rightNode) {
 		if (leftNode.leaf) {
 			int total = (leftNode.n + rightNode.n);
@@ -507,10 +555,15 @@ class BTree {
 				removeEnrty(rightNode, rightNode.children[0]);
 				leftNode.n++;
 			}
-			return rightNode.keys[0];
+			return getSmallestKey(rightNode);
 		}
 	}
 
+	/**
+	 * merge the right node into the left node
+	 * @param leftNode will get all the stuff
+	 * @param rightNode will be completely barren
+	 */
 	private void merge(BTreeNode leftNode, BTreeNode rightNode) {
 		if (leftNode.leaf) {
 			int leftTarget = (leftNode.n + rightNode.n);
@@ -540,6 +593,10 @@ class BTree {
 		}
 	}
 
+	/**
+	 * puts all the recordIds in a list for easy printing
+	 * @return a list of recordIds
+	 */
 	List<Long> print() {
 
 		List<Long> listOfRecordID = new ArrayList<>();
